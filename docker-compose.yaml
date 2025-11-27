@@ -1,0 +1,20 @@
+services:
+  apache-php:
+    container_name: KeePass
+    build: .
+    ports:
+      - "80:80"
+    volumes:
+      - ./phpwww-data:/var/www/html
+    restart: unless-stopped
+
+  mysql-php:
+    container_name: bsdKeePass
+    image: mysql:9.4.0
+    expose:
+      - "3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456789
+    volumes:
+      - ./data:/var/lib/mysql
+    restart: unless-stopped
