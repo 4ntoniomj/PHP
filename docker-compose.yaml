@@ -9,7 +9,7 @@ services:
     restart: unless-stopped
 
   mysql-php:
-    container_name: bsdKeePass
+    container_name: bsd
     image: mysql:9.4.0
     expose:
       - "3306"
