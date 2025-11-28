@@ -12,7 +12,7 @@ function old($field, $default = '') {
         $old = $_SESSION['old'] ?? []; // Carga los datos del formulario antes de que fallara
         unset($_SESSION['old']); // Borra datos del formulario para que no se vuelvan a repetir 
     }
-    return e($old[$field] ?? $default); // Devuelve el valor field del array old, si esta vacío devuelve default que al no estar definida devuelve una cadena vacía
+    return especial($old[$field] ?? $default); // Devuelve el valor field del array old, si esta vacío devuelve default que al no estar definida devuelve una cadena vacía
 }
 
 
@@ -21,7 +21,7 @@ function show_success() {
         $message = $_SESSION['success'];
         unset($_SESSION['success']); // Borramos success
         // El mensaje se escapa (e()) por seguridad antes de insertarlo en el HTML.
-        return '<div class="alert alert-success">' . e($message) . '</div>'; // Y mostramos mensaje
+        return '<div class="alert alert-success">' . especial($message) . '</div>'; // Y mostramos mensaje
     }
     return ''; // Si no nada
 }
@@ -31,7 +31,7 @@ function show_error() {
     if (isset($_SESSION['error'])) {
         $message = $_SESSION['error'];
         unset($_SESSION['error']);
-        return '<div class="alert alert-danger">' . e($message) . '</div>';
+        return '<div class="alert alert-danger">' . especial($message) . '</div>';
     }
     return '';
 }
