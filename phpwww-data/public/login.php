@@ -36,8 +36,8 @@
             </p>
         </div>
 
-        <!-- Formulario -->
-        <form action="#" method="POST" class="space-y-6">
+          <!-- Formulario -->
+        <form action="http://10.74.27.31/public/login.php#" method="POST" class="space-y-6">
             <!-- Campo de Usuario/Email -->
             <div>
                 <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
@@ -61,3 +61,21 @@
                 </button>
             </div>
         </form>
+
+        <!-- Enlace de ayuda o registro -->
+        <div class="mt-6 text-center">
+            <a href="http://10.74.27.31/public/login.php#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                ¿Olvidaste tu contraseña?
+            </a>
+            <p class="mt-4 text-sm text-gray-600">
+                ¿No tienes cuenta?
+                <a href="http://10.74.27.31/public/login.php#" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    Regístrate aquí
+                </a> (PPROXIMAMENTE...)
+            </p>
+        </div>
+    </div>
+
+
+</body>
+</html>
