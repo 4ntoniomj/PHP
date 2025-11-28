@@ -1,3 +1,8 @@
+<?php
+require_once '../app/auth.php';
+require_once '../app/utils.php';
+require_once '../app/pdo.php';
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -113,27 +118,14 @@
             <h1>🔐 Iniciar Sesión</h1>
             <p>Gestor de Incidencias</p>
         </div>
-
-
         <form method="POST" action="">
             <div class="form-group">
                 <label for="username">Usuario:</label>
-                <input type="text" 
-                       id="username" 
-                       name="username" 
-                       value="<?= e($username) ?>" 
-                       required
-                       autofocus>
-
-             
+                <input type="text" id="username" name="username" value="<?= e($username) ?>" required autofocus>           
             </div>
             <div class="form-group">
                 <label for="password">Contraseña:</label>
-                <input type="password" 
-                       id="password" 
-                       name="password" 
-                       required>
-
+                <input type="password" id="password" name="password"  required>
             </div>
             <button type="submit" class="btn">Iniciar Sesión</button>
         </form>
