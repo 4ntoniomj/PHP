@@ -18,7 +18,7 @@ $pdo = getPDO();
 
 $search = $_GET['search'] ?? '';
 $page = max(1, intval($_GET['page'] ?? 1));
-$per_page = 10;
+$per_page = 6; // CAMBIADO: Ahora muestra 6 tickets por página
 $offset = ($page - 1) * $per_page;
 
 // Construir consulta base CON FILTRO DE USUARIO ACTUAL
@@ -232,14 +232,77 @@ $tickets = $stmt->fetchAll();
         .btn-delete { background: #e74c3c; color: white; }
         .btn-view { background: #27ae60; color: white; }
 
-        /* PAGINACIÓN */
+        /* PAGINACIÓN MEJORADA */
         .pagination {
-            display: flex; justify-content: center; align-items: center;
-            gap: 1rem; margin-top: 2rem; margin-bottom: 2rem;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-top: 2rem; 
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
-        .page-info { color: #2c3e50; font-weight: 500; background: rgba(255,255,255,0.8); padding: 0.5rem; border-radius: 4px;}
+        
+        .pagination-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .page-info { 
+            color: #2c3e50; 
+            font-weight: 500; 
+            background: rgba(255,255,255,0.8); 
+            padding: 0.5rem 1rem; 
+            border-radius: 20px;
+            border: 1px solid #e1e5e9;
+        }
 
-        .empty-state { text-align: center; padding: 3rem; color: #7f8c8d; }
+        .page-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #3498db;
+            background: white;
+            color: #3498db;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .page-btn:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .page-btn.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .page-btn.disabled {
+            background: #f8f9fa;
+            color: #6c757d;
+            border-color: #dee2e6;
+            cursor: not-allowed;
+        }
+        
+        .page-btn.disabled:hover {
+            background: #f8f9fa;
+            color: #6c757d;
+            transform: none;
+        }
+
+        .empty-state { 
+            text-align: center; 
+            padding: 3rem; 
+            color: #7f8c8d; 
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 1rem;
+            font-size: 1.5em;
+        }
 
         @media (max-width: 768px) {
             .header { flex-direction: column; gap: 1rem; padding: 1rem; }
@@ -253,7 +316,24 @@ $tickets = $stmt->fetchAll();
                 padding: 1.5rem;
                 border-bottom: 2px solid #ddd;
             }
-            .preferences-link { position: relative; top: auto; right: auto; align-self: flex-end; margin: 0.5rem; }
+            
+            .preferences-link { 
+                position: relative; 
+                top: auto; 
+                right: auto; 
+                align-self: flex-end; 
+                margin: 0.5rem; 
+            }
+            
+            .pagination {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .pagination-controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -344,19 +424,55 @@ $tickets = $stmt->fetchAll();
 
             <?php if ($total_pages > 1): ?>
                 <div class="pagination">
-                    <?php if ($page > 1): ?>
-                        <a href="?page=<?= $page - 1 ?>&search=<?= especial($search) ?>" class="btn btn-search">« Anterior</a>
-                    <?php endif; ?>
+                    <div class="page-info">
+                        Mostrando <?= count($tickets) ?> de <?= $total_records ?> tickets
+                        <?php if (!empty($search)): ?>
+                            para "<strong><?= especial($search) ?></strong>"
+                        <?php endif; ?>
+                    </div>
                     
-                    <span class="page-info">
-                        Página <?= $page ?> de <?= $total_pages ?> 
-                        (<?= $total_records ?> tickets)
-                    </span>
-                    
-                    <?php if ($page < $total_pages): ?>
-                        <a href="?page=<?= $page + 1 ?>&search=<?= especial($search) ?>" class="btn btn-search">Siguiente »</a>
-                    <?php endif; ?>
+                    <div class="pagination-controls">
+                        <?php if ($page > 1): ?>
+                            <a href="?page=1&search=<?= especial($search) ?>" class="page-btn" title="Primera página">««</a>
+                            <a href="?page=<?= $page - 1 ?>&search=<?= especial($search) ?>" class="page-btn" title="Página anterior">«</a>
+                        <?php else: ?>
+                            <span class="page-btn disabled">««</span>
+                            <span class="page-btn disabled">«</span>
+                        <?php endif; ?>
+
+                        <?php
+                        // Mostrar números de página (máximo 5 páginas alrededor de la actual)
+                        $start_page = max(1, $page - 2);
+                        $end_page = min($total_pages, $page + 2);
+                        
+                        for ($i = $start_page; $i <= $end_page; $i++): 
+                        ?>
+                            <a href="?page=<?= $i ?>&search=<?= especial($search) ?>" 
+                               class="page-btn <?= $i == $page ? 'active' : '' ?>">
+                                <?= $i ?>
+                            </a>
+                        <?php endfor; ?>
+
+                        <?php if ($page < $total_pages): ?>
+                            <a href="?page=<?= $page + 1 ?>&search=<?= especial($search) ?>" class="page-btn" title="Página siguiente">»</a>
+                            <a href="?page=<?= $total_pages ?>&search=<?= especial($search) ?>" class="page-btn" title="Última página">»»</a>
+                        <?php else: ?>
+                            <span class="page-btn disabled">»</span>
+                            <span class="page-btn disabled">»»</span>
+                        <?php endif; ?>
+                    </div>
                 </div>
+            <?php else: ?>
+                <?php if ($total_records > 0): ?>
+                    <div class="pagination">
+                        <div class="page-info">
+                            Mostrando <?= count($tickets) ?> tickets
+                            <?php if (!empty($search)): ?>
+                                para "<strong><?= especial($search) ?></strong>"
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
