@@ -5,7 +5,7 @@ require_once '../app/csrf.php';
 require_once '../app/auth.php';
 
 if (is_logged_in()) {
-    header('Location: dashboard.php');
+    header('Location: index.php');
     exit;
 }
 
@@ -33,7 +33,7 @@ $token = generate_csrf_token();
         }
 
         .fade-overlay {
-            /* 🔽 FONDO LILA CON OPACIDAD 0.88 */
+            /* FONDO LILA */
             background-color: rgba(245, 240, 255, 0.88);
             position: fixed;
             top: 0;
@@ -128,7 +128,7 @@ $token = generate_csrf_token();
     </style>
 </head>
 <body>
-    <!-- 🔽 FADE LILA -->
+    <!-- FADE LILA -->
     <div class="fade-overlay"></div>
 
     <div class="login-box">

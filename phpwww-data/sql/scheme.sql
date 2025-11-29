@@ -1,13 +1,13 @@
-CREATE IF NOT EXISTS DATABASE GDI; -- Creamos base de datos gestor de incidencias
+CREATE DATABASE IF NOT EXISTS GDI; 
 USE GDI;
 
-CREATE IF NOT EXISTS TABLE usuarios (
+CREATE TABLE IF NOT EXISTS usuarios (
     id INT PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(255), NOT NULL
+    password_hash VARCHAR(255) NOT NULL
 );
 
-CREATE IF NOT EXISTS TABLE tickets (
+CREATE TABLE IF NOT EXISTS tickets (
     id INT PRIMARY KEY AUTO_INCREMENT,
     titulo VARCHAR(255) NOT NULL,
     descripcion TEXT,
@@ -18,7 +18,7 @@ CREATE IF NOT EXISTS TABLE tickets (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
-CREATE IF NOT EXISTS TABLE auditoria (
+CREATE TABLE IF NOT EXISTS  auditoria (
     id INT PRIMARY KEY AUTO_INCREMENT,
     tabla_afectada VARCHAR(50) NOT NULL,
     registro_id INT NOT NULL,
