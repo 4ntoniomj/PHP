@@ -15,6 +15,6 @@ grayColor="\e[0;37m[1m"
 
 docker compose up -d
 
-echo -e "Para entrar a la base de datos ejecute ${yellowColor}docker exec -it bsdKeePass mysql -u root -p${endColor}\nLa contraseña por defecto es ${redColor}123456789${endColor}"
+echo -e "Para entrar a la base de datos ejecute ${yellowColor}docker exec -it bsd mysql -u root -p${endColor}\nLa contraseña por defecto es ${redColor}123456789${endColor}"
 
 sudo chown $USER:$USER -R data
