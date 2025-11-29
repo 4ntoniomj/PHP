@@ -8,6 +8,12 @@ require_login();
 
 $pdo = getPDO();
 
+// Obtener preferencias del usuario
+$tamaño_actual = $_COOKIE['tamaño_letra'] ?? 'normal';
+$color_fade_actual = $_COOKIE['color_fade'] ?? '#f5f0ff';
+$fade_color = $color_fade_actual . 'e0'; // Agregar transparencia
+$body_class = "body-$tamaño_actual";
+
 // Obtener estadísticas
 $stmt = $pdo->prepare("
     SELECT 
@@ -54,11 +60,18 @@ $latest_tickets = $stmt->fetchAll();
             min-height: 100vh;
             position: relative;
             padding: 0;
+            font-size: 16px; /* Tamaño base */
         }
 
-        /* 🔽 FADE LILA 0.88 */
+        /* Tamaños de fuente aplicados correctamente */
+        body.body-pequeño { font-size: 14px; }
+        body.body-normal { font-size: 16px; }
+        body.body-grande { font-size: 18px; }
+        body.body-muy-grande { font-size: 20px; }
+
+        /* 🔽 FADE DINÁMICO CON PREFERENCIAS */
         .fade-overlay {
-            background-color: rgba(245, 240, 255, 0.88);
+            background-color: <?= $fade_color ?>;
             position: fixed;
             top: 0;
             left: 0;
@@ -88,6 +101,7 @@ $latest_tickets = $stmt->fetchAll();
             font-weight: 500;
             z-index: 10;
             transition: background 0.3s;
+            font-size: 1em;
         }
 
         .preferences-link:hover {
@@ -99,19 +113,20 @@ $latest_tickets = $stmt->fetchAll();
             padding: 1rem 2rem;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             display: flex;
-            justify-content: space-between; /* CORREGIDO */
+            justify-content: space-between;
             align-items: center;
         }
         
         .header h1 {
             color: #2c3e50;
-            font-size: 1.5rem;
+            font-size: 1.5em;
         }
         
         .user-info {
             display: flex;
             align-items: center;
             gap: 1rem;
+            font-size: 1em;
         }
         
         .logout-btn {
@@ -122,6 +137,7 @@ $latest_tickets = $stmt->fetchAll();
             border-radius: 6px;
             font-weight: 500;
             transition: background 0.3s;
+            font-size: 1em;
         }
         
         .logout-btn:hover {
@@ -151,7 +167,7 @@ $latest_tickets = $stmt->fetchAll();
         }
         
         .stat-number {
-            font-size: 2rem;
+            font-size: 2em;
             font-weight: bold;
             margin-bottom: 0.5rem;
         }
@@ -176,6 +192,7 @@ $latest_tickets = $stmt->fetchAll();
             border-radius: 6px;
             font-weight: 500;
             transition: background 0.3s;
+            font-size: 1em;
         }
         
         .btn:hover {
@@ -200,6 +217,7 @@ $latest_tickets = $stmt->fetchAll();
         .latest-tickets h2 {
             margin-bottom: 1rem;
             color: #2c3e50;
+            font-size: 1.5em;
         }
         
         .ticket-list {
@@ -210,7 +228,7 @@ $latest_tickets = $stmt->fetchAll();
             padding: 1rem;
             border-bottom: 1px solid #e5e7eb;
             display: flex;
-            justify-content: space-between; /* CORREGIDO */
+            justify-content: space-between;
             align-items: center;
         }
         
@@ -221,6 +239,7 @@ $latest_tickets = $stmt->fetchAll();
         .ticket-title {
             font-weight: 500;
             flex-grow: 1;
+            font-size: 1em;
         }
         
         .ticket-title a {
@@ -237,13 +256,13 @@ $latest_tickets = $stmt->fetchAll();
             gap: 1rem;
             align-items: center;
             color: #6b7280;
-            font-size: 0.875rem;
+            font-size: 0.875em;
         }
         
         .priority-badge {
             padding: 0.25rem 0.75rem;
             border-radius: 15px;
-            font-size: 0.75rem;
+            font-size: 0.75em;
             font-weight: 600;
         }
         
@@ -256,6 +275,7 @@ $latest_tickets = $stmt->fetchAll();
             padding: 1rem;
             border-radius: 6px;
             margin-bottom: 1rem;
+            font-size: 1em;
         }
         
         .alert-success {
@@ -269,12 +289,45 @@ $latest_tickets = $stmt->fetchAll();
             color: #b91c1c;
             border: 1px solid #fca5a5;
         }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 0 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .preferences-link {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin: 1rem;
+                align-self: flex-end;
+            }
+            
+            .ticket-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .ticket-meta {
+                align-self: flex-end;
+            }
+        }
     </style>
 </head>
-<body>
-    <div class="fade-overlay" style="background-color: <?= especial($color_actual) ?>;"></div>
-    <!-- 🔽 FADE LILA -->
-<div class="fade-overlay" style="background-color: <?= especial($_COOKIE['color_fondo'] ?? 'rgba(245, 240, 255, 0.88)') ?>;"></div>
+<body class="<?= $body_class ?>">
+    <!-- FADE DINÁMICO CON PREFERENCIAS -->
+    <div class="fade-overlay"></div>
+
     <div class="main-container">
         <!-- Enlace preferencias -->
         <a href="preferencias.php" class="preferences-link">🎨 Preferencias</a>
