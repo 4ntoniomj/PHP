@@ -272,9 +272,9 @@ $latest_tickets = $stmt->fetchAll();
     </style>
 </head>
 <body>
+    <div class="fade-overlay" style="background-color: <?= especial($color_actual) ?>;"></div>
     <!-- 🔽 FADE LILA -->
-    <div class="fade-overlay"></div>
-
+<div class="fade-overlay" style="background-color: <?= especial($_COOKIE['color_fondo'] ?? 'rgba(245, 240, 255, 0.88)') ?>;"></div>
     <div class="main-container">
         <!-- Enlace preferencias -->
         <a href="preferencias.php" class="preferences-link">🎨 Preferencias</a>
