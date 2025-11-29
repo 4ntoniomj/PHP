@@ -1,9 +1,9 @@
 <?php
 session_start();
-require_once __DIR__ . '/../app/pdo.php';
-require_once __DIR__ . '/../app/auth.php';
-require_once __DIR__ . '/../app/csrf.php';
-require_once __DIR__ . '/../app/utils.php';
+require_once '../app/pdo.php';
+require_once '../app/auth.php';
+require_once '../app/csrf.php';
+require_once '../app/utils.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: login.php');

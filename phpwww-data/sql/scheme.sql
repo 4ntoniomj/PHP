@@ -29,3 +29,15 @@ CREATE TABLE IF NOT EXISTS  auditoria (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
+
+CREATE TABLE  IF NOT EXISTS item_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ticket_original_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    titulo VARCHAR(255),
+    descripcion TEXT,
+    prioridad VARCHAR(50),
+    estado VARCHAR(50),
+    created_at DATETIME, 
+    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP 
+);
