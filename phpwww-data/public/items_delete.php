@@ -4,65 +4,91 @@ require_once '../app/auth.php';
 require_once '../app/pdo.php';
 require_once '../app/utils.php';
 
-require_login();
+require_login(); // Protege la ruta [cite: 27]
 
-// Validar que recibimos un ID
+// 1. Obtener ID del ticket a borrar
 $id = $_GET['id'] ?? null;
-
 if (!$id) {
-    redirect_with_message('items_list.php', 'ID de ticket no especificado', true);
+    redirect_with_message('items_list.php', 'ID no especificado.', true);
 }
 
 try {
     $pdo = getPDO();
-    $user_id = get_current_user_id();
+    $current_user_id = get_current_user_id();
 
-    // --- INICIO DE LA TRANSACCIÓN ---
-    // A partir de aquí, nada se guarda definitivamente hasta hacer commit()
-    $pdo->beginTransaction(); 
+    // =================================================================
+    // 🔴 INICIO DE LA TRANSACCIÓN (Requisito 10)
+    // =================================================================
+    // A partir de aquí, ninguna operación es definitiva hasta el commit.
+    $pdo->beginTransaction(); // 
 
-    // 1. Verificar seguridad: ¿El ticket existe y pertenece al usuario?
-    $stmt = $pdo->prepare("SELECT id, titulo FROM tickets WHERE id = ? AND usuario_id = ?");
-    $stmt->execute([$id, $user_id]);
+    // 2. Obtener datos del ticket ANTES de borrar (para guardarlos en auditoría)
+    // También verificamos seguridad: ¿El ticket pertenece al usuario?
+    $stmt = $pdo->prepare("SELECT * FROM tickets WHERE id = ? AND usuario_id = ?");
+    $stmt->execute([$id, $current_user_id]);
     $ticket = $stmt->fetch();
 
     if (!$ticket) {
-        // Si no es suyo, lanzamos excepción para ir al catch y hacer rollback (aunque no se haya cambiado nada aún)
-        throw new Exception("No tienes permiso para eliminar este ticket o no existe.");
+        throw new Exception("El ticket no existe o no tienes permisos para borrarlo.");
     }
 
-    // 2. AUDITORÍA: Registrar quién está intentando borrar y qué [cite: 41]
-    // Guardamos esto ANTES de borrar para que quede constancia en la transacción
-    $accion = "Usuario ID $user_id eliminó el ticket ID $id: " . $ticket['titulo'];
-    // Asegúrate de tener la tabla 'auditoria' creada en tu schema.sql
-    $stmtAudit = $pdo->prepare("INSERT INTO auditoria (usuario_id, accion, fecha) VALUES (?, ?, NOW())");
-    $stmtAudit->execute([$user_id, $accion]);
+    // 3. Insertar en tabla AUDITORIA (Registro técnico con JSON)
+    // Cumple con: "registra la acción en una tabla de auditoría" 
+    $sqlAudit = "INSERT INTO auditoria (tabla_afectada, registro_id, accion, datos_anteriores, usuario_id) 
+                 VALUES (:tabla, :id, :accion, :datos, :user)";
+    
+    $stmtAudit = $pdo->prepare($sqlAudit);
+    $stmtAudit->execute([
+        ':tabla'  => 'tickets',
+        ':id'     => $id,
+        ':accion' => 'DELETE',
+        ':datos'  => json_encode($ticket), // Guardamos todo el estado anterior como JSON
+        ':user'   => $current_user_id
+    ]);
 
-    // 3. BORRADO: Eliminar el ticket de la tabla
+    // 4. Insertar en tabla ITEM_LOG (Tu tabla histórica personalizada)
+    // Guardamos una copia legible de los datos principales
+    $sqlLog = "INSERT INTO item_log (ticket_original_id, usuario_id, titulo, descripcion, prioridad, estado, created_at) 
+               VALUES (:orig_id, :user_id, :titulo, :desc, :prio, :est, :fecha)";
+    
+    $stmtLog = $pdo->prepare($sqlLog);
+    $stmtLog->execute([
+        ':orig_id' => $ticket['id'],
+        ':user_id' => $ticket['usuario_id'],
+        ':titulo'  => $ticket['titulo'],
+        ':desc'    => $ticket['descripcion'],
+        ':prio'    => $ticket['prioridad'],
+        ':est'     => $ticket['estado'],
+        ':fecha'   => $ticket['created_at']
+    ]);
+
+    // 5. BORRAR el ticket de la tabla principal
     $stmtDelete = $pdo->prepare("DELETE FROM tickets WHERE id = ?");
     $stmtDelete->execute([$id]);
 
-    // --- SIMULACIÓN DE FALLO PARA PROBAR ROLLBACK  ---
-    // Descomenta la siguiente línea para PROBAR que el rollback funciona.
-    // Si lanzamos esta excepción, el ticket NO se borrará y la auditoría NO se guardará.
+    // =================================================================
+    // 🧪 SIMULACIÓN DE FALLO (Para demostrar Rollback en la defensa)
+    // =================================================================
+    // Descomenta la línea de abajo para probar que los datos NO se borran si hay error.
     
-    // throw new Exception("⚠️ SIMULACIÓN DE FALLO: Probando Rollback automátic. Los datos no se borrarán.");
+    // throw new Exception("🔥 ERROR SIMULADO: Probando el Rollback automático.");
 
-
-    // 4. CONFIRMAR CAMBIOS
-    // Si todo ha ido bien y no ha saltado ninguna excepción, guardamos todo.
-    $pdo->commit();
-
-    redirect_with_message('items_list.php', 'Ticket eliminado correctamente (Transacción Exitosa).');
+    // 6. CONFIRMAR CAMBIOS (COMMIT)
+    // Si llegamos aquí sin errores, se guardan los logs y se borra el ticket.
+    $pdo->commit(); 
+    
+    redirect_with_message('items_list.php', 'Ticket eliminado y auditado correctamente.');
 
 } catch (Exception $e) {
-    // --- ROLLBACK [cite: 42] ---
-    // Si algo falló (o simulamos el fallo), deshacemos TODOS los cambios pendientes.
-    // Ni se borra el ticket, ni se inserta la auditoría.
+    // =================================================================
+    // 🔄 ROLLBACK (Requisito: "si ocurre un fallo, debe hacerse rollback") 
+    // =================================================================
+    // Deshace el Insert en Auditoria, el Insert en Log y el Delete en Tickets.
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
 
+    // Registrar el error en el log interno de PHP y avisar al usuario
     error_log("Error en transacción de borrado: " . $e->getMessage());
     redirect_with_message('items_list.php', 'Error al borrar: ' . $e->getMessage(), true);
 }

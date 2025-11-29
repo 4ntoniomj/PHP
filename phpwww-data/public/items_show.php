@@ -452,6 +452,7 @@ if (!$ticket) {
                     <a href="index.php">🏠 Inicio</a>
                     <a href="items_list.php">📋 Lista de Tickets</a>
                     <a href="items_form.php">➕ Nuevo Ticket</a>
+                    <a href="items_log.php  " style="color: #e74c3c;">🗑️ Log</a>
                 </div>
                 <span>Hola, <strong><?= especial($_SESSION['username']) ?></strong></span>
                 <a href="logout.php" class="logout-btn">Cerrar Sesión</a>

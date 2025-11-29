@@ -350,7 +350,7 @@ $tickets = $stmt->fetchAll();
                 <div class="nav-links">
                     <a href="index.php">🏠 Inicio</a>
                     <a href="items_form.php">➕ Nuevo Ticket</a>
-                    <a href="papelera_unificada.php" style="color: #e74c3c;">🗑️ Papelera</a> 
+                    <a href="items_log.php  " style="color: #e74c3c;">🗑️ Log</a> 
                 </div>
                 <span>Hola, <strong><?= especial($_SESSION['username']) ?></strong></span>
                 <a href="logout.php" class="logout-btn">Cerrar Sesión</a>
@@ -413,9 +413,9 @@ $tickets = $stmt->fetchAll();
                             <div class="actions">
                                 <a href="items_show.php?id=<?= especial($ticket['id']) ?>" class="action-btn btn-view" title="Ver detalle">👁️</a>
                                 <a href="items_form.php?id=<?= especial($ticket['id']) ?>" class="action-btn btn-edit" title="Editar">✏️</a>
-                                <a href="papelera_unificada.php?action=soft_delete&id=<?= especial($ticket['id']) ?>" 
+                                <a href="items_delete.php?id=<?= especial($ticket['id']) ?>" 
                                    class="action-btn btn-delete"
-                                   onclick="return confirm('¿Estás seguro de que quieres enviar este ticket a la papelera?')" title="Enviar a Papelera">🗑️</a>
+                                   onclick="return confirm('¿Estás seguro de que quieres enviar este ticket a la LOG?')" title="Enviar a Papelera">🗑️</a>
                             </div>
                         </div>
                     <?php endforeach; ?>

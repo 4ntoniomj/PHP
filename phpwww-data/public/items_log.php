@@ -57,7 +57,7 @@ if ($action === 'soft_delete') {
         $stmt_del->execute([$id]);
 
         $pdo->commit();
-        redirect_with_message('items_list.php', 'El ticket ha sido enviado a la papelera.');
+        redirect_with_message('items_list.php', 'El ticket ha sido enviado a la LOG.');
 
     } catch (PDOException $e) {
         if ($pdo->inTransaction()) {
@@ -70,23 +70,23 @@ if ($action === 'soft_delete') {
 
 // ==========================================================
 // 2. LÓGICA DE ACCIÓN: Restaurar o Borrar Definitivamente
-//    Llamada desde el formulario de la vista de papelera
+//    Llamada desde el formulario de la vista de LOG
 // ==========================================================
 elseif (in_array($action, ['restore', 'kill'])) {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        redirect_with_message('papelera_unificada.php', 'Método no permitido.', true);
+        redirect_with_message('items_log.php', 'Método no permitido.', true);
     }
     
     $id = $_POST['id'] ?? null;
 
     try {
-        // Verificar item en la papelera y permisos
+        // Verificar item en la LOG y permisos
         $stmt = $pdo->prepare("SELECT * FROM item_log WHERE id = ? AND usuario_id = ?");
         $stmt->execute([$id, $user_id]);
         $log_item = $stmt->fetch();
 
         if (!$log_item) {
-            redirect_with_message('papelera_unificada.php', 'El item no existe o no tienes permiso.', true);
+            redirect_with_message('items_log.php', 'El item no existe o no tienes permiso.', true);
         }
 
         $pdo->beginTransaction();
@@ -103,7 +103,7 @@ elseif (in_array($action, ['restore', 'kill'])) {
                 $log_item['estado'], $log_item['usuario_id'], $log_item['created_at']
             ]);
 
-            // Borramos de la papelera
+            // Borramos de la LOG
             $stmt_del = $pdo->prepare("DELETE FROM item_log WHERE id = ?");
             $stmt_del->execute([$id]);
             
@@ -118,14 +118,14 @@ elseif (in_array($action, ['restore', 'kill'])) {
         }
 
         $pdo->commit();
-        redirect_with_message('papelera_unificada.php', $msg);
+        redirect_with_message('items_log.php', $msg);
 
     } catch (PDOException $e) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
         error_log("Error Restaurar/Borrar: " . $e->getMessage());
-        redirect_with_message('papelera_unificada.php', 'Ocurrió un error en la base de datos.', true);
+        redirect_with_message('items_log.php', 'Ocurrió un error en la base de datos.', true);
     }
 } 
 
@@ -318,7 +318,7 @@ elseif ($action === 'view') {
             <div class="trash-grid">
                 <?php if (empty($deleted_tickets)): ?>
                     <div class="empty-state">
-                        <h3>La papelera está vacía</h3>
+                        <h3>La LOG está vacía</h3>
                         <p>No hay tickets eliminados recientemente.</p>
                     </div>
                 <?php else: ?>
@@ -333,13 +333,13 @@ elseif ($action === 'view') {
                                 **Borrado el:** <?= date('d/m/Y H:i', strtotime($ticket['deleted_at'])) ?>
                             </div>
                             <div class="actions">
-                                <form action="papelera_unificada.php" method="POST">
+                                <form action="items_log.php" method="POST">
                                     <input type="hidden" name="id" value="<?= especial($ticket['id']) ?>">
                                     <input type="hidden" name="action" value="restore">
                                     <button type="submit" class="btn btn-restore">♻️ Restaurar</button>
                                 </form>
 
-                                <form action="papelera_unificada.php" method="POST" onsubmit="return confirm('¿ESTÁS SEGURO? Esto eliminará el ticket de forma permanente (COMMIT).');">
+                                <form action="items_log.php" method="POST" onsubmit="return confirm('¿ESTÁS SEGURO? Esto eliminará el ticket de forma permanente (COMMIT).');">
                                     <input type="hidden" name="id" value="<?= especial($ticket['id']) ?>">
                                     <input type="hidden" name="action" value="kill">
                                     <button type="submit" class="btn btn-kill">❌ Borrar Definitivo</button>

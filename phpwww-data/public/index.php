@@ -374,6 +374,7 @@ $latest_tickets = $stmt->fetchAll();
             <!-- Acciones -->
             <div class="actions">
                 <a href="items_form.php" class="btn btn-success">➕ Nuevo Ticket</a>
+                <a href="items_log.php  " class="btn" >🗑️ Log</a>
                 <a href="items_list.php" class="btn">📋 Ver Todos los Tickets</a>
             </div>
 
