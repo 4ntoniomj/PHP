@@ -14,15 +14,29 @@ $body_class = "body-$tamaño_actual";
 
 $pdo = getPDO();
 
-// --- LÓGICA DE BÚSQUEDA, FILTROS Y PAGINACIÓN --- //
+// --- LÓGICA DE BÚSQUEDA, FILTROS, ORDENACIÓN Y PAGINACIÓN --- //
 
 // 1. Capturar parámetros de filtros
 $search = $_GET['search'] ?? '';
 $filter_prioridad = $_GET['filter_prioridad'] ?? '';
 $filter_estado = $_GET['filter_estado'] ?? '';
-// [NUEVO] Filtros de fecha
 $date_start = $_GET['date_start'] ?? '';
 $date_end = $_GET['date_end'] ?? '';
+
+// Parámetros de ordenación
+$sort = $_GET['sort'] ?? 'created_at';
+$order = $_GET['order'] ?? 'desc';
+
+// Validar parámetros de ordenación
+$allowed_sorts = ['titulo', 'prioridad', 'estado', 'created_at'];
+$allowed_orders = ['asc', 'desc'];
+
+if (!in_array($sort, $allowed_sorts)) {
+    $sort = 'created_at';
+}
+if (!in_array($order, $allowed_orders)) {
+    $order = 'desc';
+}
 
 $page = max(1, intval($_GET['page'] ?? 1));
 $per_page = 6; 
@@ -51,17 +65,15 @@ if (!empty($filter_estado)) {
     $params[] = $filter_estado;
 }
 
-// [NUEVO] Filtro de Fecha (Desde)
+// Filtro de Fecha (Desde)
 if (!empty($date_start)) {
     $where .= " AND created_at >= ?";
-    // Añadimos la hora de inicio del día
     $params[] = $date_start . ' 00:00:00';
 }
 
-// [NUEVO] Filtro de Fecha (Hasta)
+// Filtro de Fecha (Hasta)
 if (!empty($date_end)) {
     $where .= " AND created_at <= ?";
-    // Añadimos la hora final del día
     $params[] = $date_end . ' 23:59:59';
 }
 
@@ -72,23 +84,36 @@ $stmt->execute($params);
 $total_records = $stmt->fetch()['total'];
 $total_pages = ceil($total_records / $per_page);
 
-// 4. Obtener tickets paginados
-$sql = "SELECT * FROM tickets $where ORDER BY created_at DESC LIMIT $per_page OFFSET $offset";
+// 4. Obtener tickets paginados y ordenados
+$sql = "SELECT * FROM tickets $where ORDER BY $sort $order LIMIT $per_page OFFSET $offset";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $tickets = $stmt->fetchAll();
 
-// 5. Helper para mantener los filtros en la paginación
-function get_page_url($page, $search, $prio, $est, $d_start, $d_end) {
+// 5. Helper para mantener los filtros en la paginación y ordenación
+function get_page_url($page, $search, $prio, $est, $d_start, $d_end, $sort = '', $order = '') {
     $query = http_build_query([
         'page' => $page,
         'search' => $search,
         'filter_prioridad' => $prio,
         'filter_estado' => $est,
         'date_start' => $d_start,
-        'date_end' => $d_end
+        'date_end' => $d_end,
+        'sort' => $sort,
+        'order' => $order
     ]);
     return "?" . $query;
+}
+
+// 6. Función para generar enlaces de ordenación
+function get_sort_link($column, $current_sort, $current_order, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $page) {
+    $new_order = 'asc';
+    
+    if ($current_sort === $column) {
+        $new_order = $current_order === 'asc' ? 'desc' : 'asc';
+    }
+    
+    return get_page_url($page, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $column, $new_order);
 }
 
 ?>
@@ -99,7 +124,6 @@ function get_page_url($page, $search, $prio, $est, $d_start, $d_end) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Tickets - Gestor de Incidencias</title>
     <style>
-        /* ... (Tus estilos generales se mantienen igual) ... */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -186,7 +210,6 @@ function get_page_url($page, $search, $prio, $est, $d_start, $d_end) {
 
         .search-input { flex-grow: 2; min-width: 200px; }
         .search-select { flex-grow: 1; min-width: 140px; cursor: pointer; }
-        /* [NUEVO] Estilo para fecha */
         .search-date { flex-grow: 1; min-width: 130px; cursor: pointer; color: #555; }
 
         .search-input:focus, .search-select:focus, .search-date:focus { 
@@ -210,15 +233,37 @@ function get_page_url($page, $search, $prio, $est, $d_start, $d_end) {
         .btn-secondary { background: #95a5a6; }
         .btn-secondary:hover { background: #7f8c8d; }
 
-        /* ... (Resto de estilos de tabla y badges igual) ... */
+        /* --- ESTILOS DE TABLA CON ORDENACIÓN --- */
         .tickets-table {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); overflow: hidden;
         }
+        
         .table-header {
             display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
             padding: 1rem 1.5rem; background: #34495e; color: white; font-weight: bold;
         }
+        
+        .sortable-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            padding: 0.5rem;
+            border-radius: 4px;
+            color: white;
+            text-decoration: none;
+        }
+
+        .sortable-header:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sort-icon {
+            font-size: 0.8em;
+        }
+
         .ticket-row {
             display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
             padding: 1rem 1.5rem; border-bottom: 1px solid #ecf0f1; align-items: center;
@@ -242,11 +287,28 @@ function get_page_url($page, $search, $prio, $est, $d_start, $d_end) {
         .prioridad-critica { background: #fce4ec; color: #c2185b; }
 
         .actions { display: flex; gap: 0.5rem; }
-        .action-btn { padding: 0.4rem 0.6rem; border-radius: 4px; text-decoration: none; transition: transform 0.2s; }
+        .action-btn { 
+            padding: 0.4rem 0.6rem; 
+            border-radius: 4px; 
+            text-decoration: none; 
+            transition: transform 0.2s;
+            font-size: 0.9em;
+        }
         .action-btn:hover { transform: translateY(-2px); }
         .btn-edit { background: #3498db; color: white; }
         .btn-delete { background: #e74c3c; color: white; }
         .btn-view { background: #27ae60; color: white; }
+
+        /* Información de ordenación actual */
+        .sort-info {
+            background: #e3f2fd;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9em;
+            color: #1976d2;
+            border-left: 4px solid #2196f3;
+        }
 
         /* Paginación */
         .pagination {
@@ -261,21 +323,22 @@ function get_page_url($page, $search, $prio, $est, $d_start, $d_end) {
         .page-btn {
             padding: 0.5rem 1rem; border: 1px solid #3498db; background: white;
             color: #3498db; text-decoration: none; border-radius: 5px; font-weight: 500;
+            transition: all 0.3s ease;
         }
-        .page-btn:hover { background: #3498db; color: white; }
+        .page-btn:hover { background: #3498db; color: white; transform: translateY(-2px); }
         .page-btn.active { background: #3498db; color: white; }
         .page-btn.disabled { background: #f8f9fa; color: #6c757d; border-color: #dee2e6; cursor: not-allowed; }
-        .page-btn.disabled:hover { background: #f8f9fa; color: #6c757d; }
+        .page-btn.disabled:hover { background: #f8f9fa; color: #6c757d; transform: none; }
         
         .empty-state { text-align: center; padding: 3rem; color: #7f8c8d; }
 
         @media (max-width: 768px) {
             .header { flex-direction: column; gap: 1rem; }
-            .search-form { flex-direction: column; align-items: stretch; } /* Stack en móvil */
+            .search-form { flex-direction: column; align-items: stretch; }
             .table-header { display: none; }
             .ticket-row { grid-template-columns: 1fr; gap: 0.5rem; padding: 1.5rem; border-bottom: 2px solid #ddd; }
             .pagination { flex-direction: column; text-align: center; }
-            .label-date { display: none; } /* Ocultar etiquetas 'Desde/Hasta' en móvil para ahorrar espacio */
+            .label-date { display: none; }
         }
     </style>
 </head>
@@ -305,6 +368,9 @@ function get_page_url($page, $search, $prio, $est, $d_start, $d_end) {
 
             <div class="search-section">
                 <form method="GET" class="search-form">
+                    <!-- Campos ocultos para mantener la ordenación -->
+                    <input type="hidden" name="sort" value="<?= especial($sort) ?>">
+                    <input type="hidden" name="order" value="<?= especial($order) ?>">
                     
                     <input type="text" 
                            name="search" 
@@ -336,18 +402,61 @@ function get_page_url($page, $search, $prio, $est, $d_start, $d_end) {
 
                     <button type="submit" class="btn btn-search">🔍 Filtrar</button>
                     
-                    <?php if (!empty($search) || !empty($filter_prioridad) || !empty($filter_estado) || !empty($date_start) || !empty($date_end)): ?>
+                    <?php if (!empty($search) || !empty($filter_prioridad) || !empty($filter_estado) || !empty($date_start) || !empty($date_end) || $sort !== 'created_at' || $order !== 'desc'): ?>
                         <a href="items_list.php" class="btn btn-secondary">❌ Limpiar</a>
                     <?php endif; ?>
                 </form>
             </div>
 
+            <?php if (!empty($tickets) && ($sort !== 'created_at' || $order !== 'desc')): ?>
+                <div class="sort-info">
+                    📊 Ordenado por: <strong><?= especial($sort) ?></strong> 
+                    (<?= $order === 'asc' ? 'ascendente ⬆️' : 'descendente ⬇️' ?>)
+                </div>
+            <?php endif; ?>
+
             <div class="tickets-table">
                 <div class="table-header">
-                    <div>Título</div>
-                    <div>Prioridad</div>
-                    <div>Estado</div>
-                    <div>Fecha</div>
+                    <div>
+                        <a class="sortable-header" href="<?= get_sort_link('titulo', $sort, $order, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $page) ?>">
+                            Título 
+                            <?php if ($sort === 'titulo'): ?>
+                                <span class="sort-icon"><?= $order === 'asc' ? '⬆️' : '⬇️' ?></span>
+                            <?php else: ?>
+                                <span class="sort-icon">↕️</span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+                    <div>
+                        <a class="sortable-header" href="<?= get_sort_link('prioridad', $sort, $order, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $page) ?>">
+                            Prioridad
+                            <?php if ($sort === 'prioridad'): ?>
+                                <span class="sort-icon"><?= $order === 'asc' ? '⬆️' : '⬇️' ?></span>
+                            <?php else: ?>
+                                <span class="sort-icon">↕️</span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+                    <div>
+                        <a class="sortable-header" href="<?= get_sort_link('estado', $sort, $order, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $page) ?>">
+                            Estado
+                            <?php if ($sort === 'estado'): ?>
+                                <span class="sort-icon"><?= $order === 'asc' ? '⬆️' : '⬇️' ?></span>
+                            <?php else: ?>
+                                <span class="sort-icon">↕️</span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
+                    <div>
+                        <a class="sortable-header" href="<?= get_sort_link('created_at', $sort, $order, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $page) ?>">
+                            Fecha
+                            <?php if ($sort === 'created_at'): ?>
+                                <span class="sort-icon"><?= $order === 'asc' ? '⬆️' : '⬇️' ?></span>
+                            <?php else: ?>
+                                <span class="sort-icon">↕️</span>
+                            <?php endif; ?>
+                        </a>
+                    </div>
                     <div>Acciones</div>
                 </div>
 
@@ -398,10 +507,10 @@ function get_page_url($page, $search, $prio, $est, $d_start, $d_end) {
                     <div class="pagination-controls">
                         <?php 
                         // Variables para simplificar el HTML
-                        $url_prev_1 = get_page_url(1, $search, $filter_prioridad, $filter_estado, $date_start, $date_end);
-                        $url_prev = get_page_url($page - 1, $search, $filter_prioridad, $filter_estado, $date_start, $date_end);
-                        $url_next = get_page_url($page + 1, $search, $filter_prioridad, $filter_estado, $date_start, $date_end);
-                        $url_last = get_page_url($total_pages, $search, $filter_prioridad, $filter_estado, $date_start, $date_end);
+                        $url_prev_1 = get_page_url(1, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $sort, $order);
+                        $url_prev = get_page_url($page - 1, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $sort, $order);
+                        $url_next = get_page_url($page + 1, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $sort, $order);
+                        $url_last = get_page_url($total_pages, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $sort, $order);
                         ?>
 
                         <?php if ($page > 1): ?>
@@ -418,7 +527,7 @@ function get_page_url($page, $search, $prio, $est, $d_start, $d_end) {
                         
                         for ($i = $start_page; $i <= $end_page; $i++): 
                         ?>
-                            <a href="<?= get_page_url($i, $search, $filter_prioridad, $filter_estado, $date_start, $date_end) ?>" 
+                            <a href="<?= get_page_url($i, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $sort, $order) ?>" 
                                class="page-btn <?= $i == $page ? 'active' : '' ?>">
                                 <?= $i ?>
                             </a>
