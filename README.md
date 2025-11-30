@@ -17,3 +17,7 @@ cd PHP
 chmod +x ./iniciar.sh
 ./iniciar.sh
 ```
+## 3. Introducir los datos
+```bash
+./iniciar.sh 1
+```
