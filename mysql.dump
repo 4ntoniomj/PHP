@@ -1,0 +1,145 @@
+-- MySQL dump 10.13  Distrib 9.4.0, for Linux (x86_64)
+--
+-- Host: localhost    Database: GDI
+-- ------------------------------------------------------
+-- Server version	9.4.0
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `auditoria`
+--
+
+DROP TABLE IF EXISTS `auditoria`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `auditoria` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `tabla_afectada` varchar(50) NOT NULL,
+  `registro_id` int NOT NULL,
+  `accion` enum('INSERT','UPDATE','DELETE') NOT NULL,
+  `datos_anteriores` json DEFAULT NULL,
+  `datos_nuevos` json DEFAULT NULL,
+  `usuario_id` int NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `usuario_id` (`usuario_id`),
+  CONSTRAINT `auditoria_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `auditoria`
+--
+
+LOCK TABLES `auditoria` WRITE;
+/*!40000 ALTER TABLE `auditoria` DISABLE KEYS */;
+/*!40000 ALTER TABLE `auditoria` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `item_log`
+--
+
+DROP TABLE IF EXISTS `item_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `item_log` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ticket_original_id` int NOT NULL,
+  `usuario_id` int NOT NULL,
+  `titulo` varchar(255) DEFAULT NULL,
+  `descripcion` text,
+  `prioridad` varchar(50) DEFAULT NULL,
+  `estado` varchar(50) DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `deleted_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `item_log`
+--
+
+LOCK TABLES `item_log` WRITE;
+/*!40000 ALTER TABLE `item_log` DISABLE KEYS */;
+/*!40000 ALTER TABLE `item_log` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `tickets`
+--
+
+DROP TABLE IF EXISTS `tickets`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tickets` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `titulo` varchar(255) NOT NULL,
+  `descripcion` text,
+  `prioridad` enum('baja','media','alta','critica') DEFAULT 'media',
+  `estado` enum('abierta','en_progreso','resuelta','cerrada') DEFAULT 'abierta',
+  `usuario_id` int NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `usuario_id` (`usuario_id`),
+  CONSTRAINT `tickets_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=201 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tickets`
+--
+
+LOCK TABLES `tickets` WRITE;
+/*!40000 ALTER TABLE `tickets` DISABLE KEYS */;
+INSERT INTO `tickets` VALUES (151,'Error al iniciar sesiÃ³n en el sistema','No puedo acceder con mis credenciales, me dice usuario/password incorrecto','alta','abierta',1,'2025-11-29 20:17:28'),(152,'Pantalla azul en Windows 11','El equipo muestra pantalla azul al ejecutar la aplicaciÃ³n de contabilidad','critica','abierta',1,'2025-11-29 20:17:28'),(153,'Solicitud de software Adobe Photoshop','Necesito instalar Photoshop CC 1111 para el departamento de diseÃ±o','baja','abierta',1,'2025-11-29 20:17:28'),(154,'Internet muy lento en oficina central','La velocidad de descarga no supera los 1 Mbps desde esta maÃ±ana','media','abierta',1,'2025-11-29 20:17:28'),(155,'Impresora HP LaserJet no responde','La impresora de la sala de reuniones muestra error de papel atascado','alta','abierta',1,'2025-11-29 20:17:28'),(156,'No llegan correos de clientes externos','Los emails de dominios externos se quedan en bandeja de entrada','alta','abierta',1,'2025-11-29 20:17:28'),(157,'Teclado no funciona correctamente','Las teclas F1-F11 no responden, parece problema de driver','baja','abierta',1,'2025-11-29 20:17:28'),(158,'Monitor parpadea intermitentemente','La pantalla Dell U1111H titila cada 1-11 minutos','media','abierta',1,'2025-11-29 20:17:28'),(159,'Access denied en carpeta proyectos','No tengo permisos para acceder a la carpeta compartida //server/proyectos1111','alta','abierta',1,'2025-11-29 20:17:28'),(160,'Sistema de backup no funciona','El backup programado de las 1:11 AM falla desde hace 1 dÃ­as','critica','abierta',1,'2025-11-29 20:17:28'),(161,'Router WiFi desconecta frecuentemente','La seÃ±al WiFi es inestable en toda la planta 1','media','abierta',1,'2025-11-29 20:17:28'),(162,'Software antivirus desactualizado','El antivirus muestra alerta de licencia expirada','media','abierta',1,'2025-11-29 20:17:28'),(163,'Mouse inalÃ¡mbrico no conecta','El mouse Logitech MX Master 1 no empareja con el receptor USB','baja','abierta',1,'2025-11-29 20:17:28'),(164,'Excel se cierra inesperadamente','Al abrir archivos grandes de mÃ¡s de 11MB, Excel se cierra sin error','alta','abierta',1,'2025-11-29 20:17:28'),(165,'Falta de espacio en disco C:','Solo quedan 111MB libres en la unidad del sistema','media','abierta',1,'2025-11-29 20:17:28'),(166,'ActualizaciÃ³n de Windows pendiente','Necesito asistencia para actualizar a Windows 11 versiÃ³n 11H1','media','en_progreso',1,'2025-11-29 20:17:28'),(167,'ConfiguraciÃ³n de VPN nueva','Requiero configurar la VPN para acceso remoto seguro','alta','en_progreso',1,'2025-11-29 20:17:28'),(168,'MigraciÃ³n de datos a nueva base','Proceso de migraciÃ³n de datos del servidor antiguo al nuevo','critica','en_progreso',1,'2025-11-29 20:17:28'),(169,'InstalaciÃ³n de scanner Canon','Necesito instalar el scanner Canon CanoScan 1111F','baja','en_progreso',1,'2025-11-29 20:17:28'),(170,'Problema con software contable','El mÃ³dulo de facturaciÃ³n no genera reportes correctamente','alta','en_progreso',1,'2025-11-29 20:17:28'),(171,'Configurar permisos de usuario nuevo','Usuario reciÃ©n contratado necesita acceso a sistemas internos','media','en_progreso',1,'2025-11-29 20:17:28'),(172,'OptimizaciÃ³n de base de datos','La base de datos SQL estÃ¡ lenta, necesita optimizaciÃ³n','alta','en_progreso',1,'2025-11-29 20:17:28'),(173,'Reemplazo de disco duro fallado','Disco duro mostrando SMART errors, necesita reemplazo','critica','en_progreso',1,'2025-11-29 20:17:28'),(174,'ConfiguraciÃ³n de respaldo en la nube','Implementar backup automÃ¡tico a AWS S1','media','en_progreso',1,'2025-11-29 20:17:28'),(175,'Problema con certificado SSL','El certificado SSL del sitio web expirÃ³','alta','en_progreso',1,'2025-11-29 20:17:28'),(176,'ActualizaciÃ³n de firmware router','Router Cisco necesita actualizaciÃ³n de firmware urgente','media','en_progreso',1,'2025-11-29 20:17:28'),(177,'InstalaciÃ³n de Microsoft Office','Necesito Office 111 instalado en equipo nuevo','baja','en_progreso',1,'2025-11-29 20:17:28'),(178,'ConfiguraciÃ³n de impresora network','Impresora Brother necesita configuraciÃ³n de red','media','en_progreso',1,'2025-11-29 20:17:28'),(179,'Problema con acceso remoto','TeamViewer no conecta desde fuera de la oficina','alta','en_progreso',1,'2025-11-29 20:17:28'),(180,'MigraciÃ³n de email a Exchange','Migrar cuentas de correo de IMAP a Exchange Online','critica','en_progreso',1,'2025-11-29 20:17:28'),(181,'Problema con Adobe Reader','No se podÃ­an abrir archivos PDF grandes, reinstalado software','baja','resuelta',1,'2025-11-29 20:17:28'),(182,'Cable de red defectuoso','Reemplazado cable Ethernet en puesto de trabajo','media','resuelta',1,'2025-11-29 20:17:28'),(183,'ActualizaciÃ³n de drivers grÃ¡ficos','Actualizados drivers NVIDIA para tarjeta RTX 1111','media','resuelta',1,'2025-11-29 20:17:28'),(184,'ConfiguraciÃ³n de monitor dual','Configurado segundo monitor para estaciÃ³n de diseÃ±o','baja','resuelta',1,'2025-11-29 20:17:28'),(185,'Limpieza de virus','Eliminado malware detectado por antivirus','alta','resuelta',1,'2025-11-29 20:17:28'),(186,'RecuperaciÃ³n de archivos borrados','Recuperados documentos importantes de la papelera','media','resuelta',1,'2025-11-29 20:17:28'),(187,'ReparaciÃ³n de teclado mecÃ¡nico','Limpiado y reparado teclado con teclas pegadas','baja','resuelta',1,'2025-11-29 20:17:28'),(188,'InstalaciÃ³n de software CAD','Instalado AutoCAD 1111 con licencias configuradas','media','resuelta',1,'2025-11-29 20:17:28'),(189,'SoluciÃ³n a error de DNS','Corregida configuraciÃ³n DNS en estaciÃ³n de trabajo','alta','resuelta',1,'2025-11-29 20:17:28'),(190,'OptimizaciÃ³n de memoria RAM','AÃ±adidos 1GB RAM a equipo con poca memoria','media','resuelta',1,'2025-11-29 20:17:28'),(191,'Problema con Windows Update','Resuelto error de actualizaciÃ³n de Windows','media','cerrada',1,'2025-11-29 20:17:28'),(192,'ConfiguraciÃ³n de smartphone corporativo','Configurado iPhone para correo corporativo','baja','cerrada',1,'2025-11-29 20:17:28'),(193,'ReparaciÃ³n de fuente de poder','Reemplazada fuente de poder en torre Dell','alta','cerrada',1,'2025-11-29 20:17:28'),(194,'MigraciÃ³n de perfil de usuario','Migrado perfil de usuario a nuevo equipo','media','cerrada',1,'2025-11-29 20:17:28'),(195,'InstalaciÃ³n de software de videollamadas','Instalado Zoom y Teams para reuniones','baja','cerrada',1,'2025-11-29 20:17:28'),(196,'SoluciÃ³n a problema de audio','Corregida salida de audio en sala de conferencias','media','cerrada',1,'2025-11-29 20:17:28'),(197,'ConfiguraciÃ³n de firewall','Actualizadas reglas de firewall para nuevo software','alta','cerrada',1,'2025-11-29 20:17:28'),(198,'ReparaciÃ³n de lector de DVD','Reemplazada unidad Ã³ptica defectuosa','baja','cerrada',1,'2025-11-29 20:17:28'),(199,'OptimizaciÃ³n de startup','Reducido tiempo de arranque del sistema','media','cerrada',1,'2025-11-29 20:17:28'),(200,'Copia de seguridad exitosa','Completado backup completo del servidor','critica','cerrada',1,'2025-11-29 20:17:28');
+/*!40000 ALTER TABLE `tickets` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `usuarios`
+--
+
+DROP TABLE IF EXISTS `usuarios`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `usuarios` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `usuarios`
+--
+
+LOCK TABLES `usuarios` WRITE;
+/*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
+INSERT INTO `usuarios` VALUES (1,'admin','$2y$10$uz/k8LcAHaGsAg7PNGC8BeGjQ3yiMwoxnQd3bz.y8nZd.qX3VJXgq');
+/*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2025-11-30 15:12:33

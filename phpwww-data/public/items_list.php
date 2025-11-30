@@ -1,96 +1,98 @@
 <?php
+// ==================== INICIO Y CONFIGURACIÓN ====================
+// Inicia sesión y carga archivos necesarios
 session_start();
-require_once '../app/auth.php';
-require_once '../app/utils.php';
-require_once '../app/pdo.php';
+require_once '../app/auth.php';   
+require_once '../app/utils.php';  
+require_once '../app/pdo.php';  
 
-require_login();
+require_login();  // Solo usuarios logueados pueden acceder
 
-// Obtener preferencias visuales
+// ==================== PREFERENCIAS DEL USUARIO ====================
+// Carga las preferencias de estilo guardadas en cookies o asigna valores por defecto
 $tamaño_actual = $_COOKIE['tamaño_letra'] ?? 'normal';
 $color_fade_actual = $_COOKIE['color_fade'] ?? '#f5f0ff';
-$fade_color = $color_fade_actual . 'e0'; 
-$body_class = "body-$tamaño_actual";
+$fade_color = $color_fade_actual . 'e0';  
+$body_class = "body-$tamaño_actual";      
 
-$pdo = getPDO();
+// ==================== CONEXIÓN A LA BASE DE DATOS ====================
 
-// --- LÓGICA DE BÚSQUEDA, FILTROS, ORDENACIÓN Y PAGINACIÓN --- //
+$pdo = getPDO();  // Obtiene un objeto PDO para consultas
 
-// 1. Capturar parámetros de filtros
+// ==================== PARÁMETROS DE BÚSQUEDA Y FILTROS ====================
 $search = $_GET['search'] ?? '';
 $filter_prioridad = $_GET['filter_prioridad'] ?? '';
 $filter_estado = $_GET['filter_estado'] ?? '';
 $date_start = $_GET['date_start'] ?? '';
 $date_end = $_GET['date_end'] ?? '';
 
-// Parámetros de ordenación
+// ==================== ORDENACIÓN ====================
 $sort = $_GET['sort'] ?? 'created_at';
 $order = $_GET['order'] ?? 'desc';
 
-// Validar parámetros de ordenación
+// Validar que los valores de ordenación sean válidos
 $allowed_sorts = ['titulo', 'prioridad', 'estado', 'created_at'];
 $allowed_orders = ['asc', 'desc'];
+if (!in_array($sort, $allowed_sorts)) { $sort = 'created_at'; }
+if (!in_array($order, $allowed_orders)) { $order = 'desc'; }
 
-if (!in_array($sort, $allowed_sorts)) {
-    $sort = 'created_at';
-}
-if (!in_array($order, $allowed_orders)) {
-    $order = 'desc';
-}
+// ==================== PAGINACIÓN ====================
+$page = max(1, intval($_GET['page'] ?? 1)); // Página actual (mínimo 1)
+$per_page = 6;                              // Registros por página
+$offset = ($page - 1) * $per_page;         // Desplazamiento para la consulta SQL
 
-$page = max(1, intval($_GET['page'] ?? 1));
-$per_page = 6; 
-$offset = ($page - 1) * $per_page;
 
-// 2. Construir consulta base
+// ==================== CONSTRUCCIÓN DE LA CONSULTA SQL ====================
+// Filtro base: solo tickets del usuario actual
 $where = "WHERE usuario_id = ?";
 $params = [get_current_user_id()]; 
 
-// Filtro de Texto
+// Filtro de búsqueda en título o descripción
 if (!empty($search)) {
     $where .= " AND (titulo LIKE ? OR descripcion LIKE ?)";
     $params[] = "%$search%";
     $params[] = "%$search%";
 }
 
-// Filtro de Prioridad
+// Filtro por prioridad
 if (!empty($filter_prioridad)) {
     $where .= " AND prioridad = ?";
     $params[] = $filter_prioridad;
 }
 
-// Filtro de Estado
+// Filtro por estado
 if (!empty($filter_estado)) {
     $where .= " AND estado = ?";
     $params[] = $filter_estado;
 }
 
-// Filtro de Fecha (Desde)
+// Filtro por fecha (Desde)
 if (!empty($date_start)) {
     $where .= " AND created_at >= ?";
     $params[] = $date_start . ' 00:00:00';
 }
 
-// Filtro de Fecha (Hasta)
+// Filtro por fecha (Hasta)
 if (!empty($date_end)) {
     $where .= " AND created_at <= ?";
     $params[] = $date_end . ' 23:59:59';
 }
 
-// 3. Obtener total de registros (Count)
+// ==================== TOTAL DE REGISTROS ====================
 $count_sql = "SELECT COUNT(*) as total FROM tickets $where";
 $stmt = $pdo->prepare($count_sql);
 $stmt->execute($params);
 $total_records = $stmt->fetch()['total'];
-$total_pages = ceil($total_records / $per_page);
+$total_pages = ceil($total_records / $per_page); 
 
-// 4. Obtener tickets paginados y ordenados
+// ==================== OBTENER TICKETS ====================
 $sql = "SELECT * FROM tickets $where ORDER BY $sort $order LIMIT $per_page OFFSET $offset";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
-$tickets = $stmt->fetchAll();
+$tickets = $stmt->fetchAll();  
 
-// 5. Helper para mantener los filtros en la paginación y ordenación
+// ==================== HELPERS ====================
+// Generar URL de paginación con los filtros actuales
 function get_page_url($page, $search, $prio, $est, $d_start, $d_end, $sort = '', $order = '') {
     $query = http_build_query([
         'page' => $page,
@@ -105,17 +107,14 @@ function get_page_url($page, $search, $prio, $est, $d_start, $d_end, $sort = '',
     return "?" . $query;
 }
 
-// 6. Función para generar enlaces de ordenación
+// Generar enlace de ordenación para columnas de la tabla
 function get_sort_link($column, $current_sort, $current_order, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $page) {
     $new_order = 'asc';
-    
     if ($current_sort === $column) {
         $new_order = $current_order === 'asc' ? 'desc' : 'asc';
     }
-    
     return get_page_url($page, $search, $filter_prioridad, $filter_estado, $date_start, $date_end, $column, $new_order);
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="es">
