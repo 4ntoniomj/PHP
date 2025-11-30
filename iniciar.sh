@@ -2,9 +2,11 @@
 # Fecha: lun 20 oct 2025 10:28:14 CEST
 # Descripción: Iniciar docker
 # Versión: 1.0
+
 if [ ! -z $1 ]; then
-    docker exec -i bsd mysql -u root -p123456789 < phpwww-data/sql/seed.sql 
-    exit 0
+	docker exec -i bsd mysql -u root -p123456789 < phpwww-data/sql/scheme.sql
+	docker exec -i bsd mysql -u root -p123456789 GDI < mysql.dump
+	exit 0
 fi
 
 # Color palette
@@ -18,7 +20,4 @@ turquoiseColor="\e[0;36m[1m"
 grayColor="\e[0;37m[1m"
 
 docker compose up -d
-
 echo -e "Para entrar a la base de datos ejecute ${yellowColor}docker exec -it bsd mysql -u root -p${endColor}\nLa contraseña por defecto es ${redColor}123456789${endColor}"
-sleep 10
-docker exec -i bsd mysql -u root -p123456789 < phpwww-data/sql/scheme.sql
