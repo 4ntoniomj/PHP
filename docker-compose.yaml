@@ -3,7 +3,7 @@ services:
     container_name: KeePass
     build: .
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       - ./phpwww-data:/var/www/html
     restart: unless-stopped
