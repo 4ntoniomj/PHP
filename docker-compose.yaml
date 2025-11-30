@@ -1,6 +1,6 @@
 services:
   apache-php:
-    container_name: KeePass
+    container_name: Registros
     build: .
     ports:
       - "8080:80"
