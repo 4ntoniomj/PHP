@@ -20,7 +20,7 @@ function show_success() {
     if (isset($_SESSION['success'])) { // Si la success en el array de session no es null
         $message = $_SESSION['success'];
         unset($_SESSION['success']); // Borramos success
-        // El mensaje se escapa (e()) por seguridad antes de insertarlo en el HTML.
+        
         return '<div class="alert alert-success">' . especial($message) . '</div>'; // Y mostramos mensaje
     }
     return ''; // Si no nada

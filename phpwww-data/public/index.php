@@ -25,6 +25,7 @@ $stmt = $pdo->prepare("
     FROM tickets 
     WHERE usuario_id = ?
 ");
+// Ejecutar la consulta con el ID del usuario actual
 $stmt->execute([get_current_user_id()]);
 $stats = $stmt->fetch();
 
@@ -69,7 +70,7 @@ $latest_tickets = $stmt->fetchAll();
         body.body-grande { font-size: 18px; }
         body.body-muy-grande { font-size: 20px; }
 
-        /* 🔽 FADE DINÁMICO CON PREFERENCIAS */
+        /* FADE DINÁMICO CON PREFERENCIAS */
         .fade-overlay {
             background-color: <?= $fade_color ?>;
             position: fixed;

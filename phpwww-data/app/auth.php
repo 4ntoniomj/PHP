@@ -56,7 +56,7 @@ function verify_credentials_db(string $username, string $password): array|false 
         if (!$user) {
             return false;
         }
-        
+        // Verifica la contraseña usando password_verify
         if (password_verify($password, $user['password_hash'])) {
             return [
                 'id' => $user['id'],
@@ -65,13 +65,13 @@ function verify_credentials_db(string $username, string $password): array|false 
         }
         
         return false;
-        
+    
     } catch (PDOException $e) {
         error_log("Error de BD en login: " . $e->getMessage());
         return false;
     }
 }
-
+// Inicia sesión para el usuario
 function login_user(int $user_id, string $username) {
     $_SESSION['user_id'] = $user_id;
     $_SESSION['username'] = $username;
