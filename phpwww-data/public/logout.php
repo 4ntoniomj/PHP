@@ -3,7 +3,7 @@
 session_start();
 
 // Cargar auth.php DESPUÉS de iniciar sesión
-require_once '/../app/auth.php';
+require_once '../app/auth.php';
 
 // Ahora sí, cerrar sesión
 logout();
