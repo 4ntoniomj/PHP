@@ -21,3 +21,6 @@ chmod +x ./iniciar.sh
 ```bash
 ./iniciar.sh 1
 ```
+## 4. Accede con este enlace
+http://localhost:8080/public
+
