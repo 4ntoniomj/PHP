@@ -1,148 +1,44 @@
 <?php
-session_start();
-require_once '../app/auth.php';
-require_once '../app/utils.php';
-require_once '../app/pdo.php';
-// Nota: Se asume que csrf.php no es estrictamente necesario aquí 
-// ya que las acciones de restauración y borrado son transaccionales 
-// y verificadas por ID de usuario.
+// ==================== INICIO Y ARCHIVOS NECESARIOS ====================
+session_start();                     
+require_once '../app/auth.php';      
+require_once '../app/utils.php';     
+require_once '../app/csrf.php';      
+require_login();  // Obliga a que solo usuarios logueados puedan acceder
 
-require_login();
+// ==================== PROCESAR FORMULARIO (POST) ====================
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-$pdo = getPDO();
-$user_id = get_current_user_id();
-$action = $_GET['action'] ?? $_POST['action'] ?? 'view'; // 'soft_delete', 'restore', 'kill', o 'view'
-
-// ==========================================================
-// 1. LÓGICA DE ACCIÓN: Mover a Papelera (Soft Delete)
-//    Llamada desde items_list.php
-// ==========================================================
-if ($action === 'soft_delete') {
-    $id = $_GET['id'] ?? null;
-    if (!$id) {
-        redirect_with_message('items_list.php', 'No se especificó un ticket para eliminar.', true);
+    //Verificación de Token CSRF 
+    $token = $_POST['csrf_token'] ?? '';     
+    if (!verify_csrf_token($token)) {        
+        die('Token CSRF inválido.');         
     }
 
-    try {
-        // INICIAR TRANSACCIÓN (Para asegurar que la copia y el borrado sean atómicos)
-        $pdo->beginTransaction();
-        
-        // 1. Obtener datos del ticket y verificar propiedad
-        $stmt = $pdo->prepare("SELECT * FROM tickets WHERE id = ? AND usuario_id = ?");
-        $stmt->execute([$id, $user_id]);
-        $ticket = $stmt->fetch();
+    // Obtener y limpiar datos enviados 
+    $tamaño_letra = sanitize_text($_POST['tamaño_letra'] ?? 'normal');  
+    $color_fade = sanitize_text($_POST['color_fade'] ?? '#f5f0ff');     
 
-        if (!$ticket) {
-            $pdo->rollBack();
-            redirect_with_message('items_list.php', 'Ticket no encontrado o sin permiso.', true);
-        }
-
-        // 2. Insertar datos en la tabla de LOG
-        $sql_log = "INSERT INTO item_log (ticket_original_id, usuario_id, titulo, descripcion, prioridad, estado, created_at, deleted_at) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
-        
-        $stmt_log = $pdo->prepare($sql_log);
-        $stmt_log->execute([
-            $ticket['id'],
-            $ticket['usuario_id'],
-            $ticket['titulo'],
-            $ticket['descripcion'],
-            $ticket['prioridad'],
-            $ticket['estado'],
-            $ticket['created_at']
-        ]);
-
-        // 3. Eliminar el ticket de la tabla 'tickets'
-        $stmt_del = $pdo->prepare("DELETE FROM tickets WHERE id = ?");
-        $stmt_del->execute([$id]);
-
-        $pdo->commit();
-        redirect_with_message('items_list.php', 'El ticket ha sido enviado a la LOG.');
-
-    } catch (PDOException $e) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack(); // ROLLBACK si falla
-        }
-        error_log("Error Soft Delete: " . $e->getMessage());
-        redirect_with_message('items_list.php', 'Error en la base de datos al mover el ticket.', true);
+    // Validar formato del color (solo HEX) 
+    if (!preg_match('/^#[a-f0-9]{6}$/i', $color_fade)) { 
+        $color_fade = '#f5f0ff'; 
     }
-} 
 
-// ==========================================================
-// 2. LÓGICA DE ACCIÓN: Restaurar o Borrar Definitivamente
-//    Llamada desde el formulario de la vista de LOG
-// ==========================================================
-elseif (in_array($action, ['restore', 'kill'])) {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        redirect_with_message('items_log.php', 'Método no permitido.', true);
-    }
-    
-    $id = $_POST['id'] ?? null;
+    //  Guardar preferencias en cookies (duración: 30 días)
+    setcookie('tamaño_letra', $tamaño_letra, time() + (30 * 24 * 60 * 60), '/');
+    setcookie('color_fade', $color_fade, time() + (30 * 24 * 60 * 60), '/');
 
-    try {
-        // Verificar item en la LOG y permisos
-        $stmt = $pdo->prepare("SELECT * FROM item_log WHERE id = ? AND usuario_id = ?");
-        $stmt->execute([$id, $user_id]);
-        $log_item = $stmt->fetch();
+    // Mensaje de éxito en la sesión
+    $_SESSION['success'] = "Preferencias guardadas.";
 
-        if (!$log_item) {
-            redirect_with_message('items_log.php', 'El item no existe o no tienes permiso.', true);
-        }
+    // Redirigir para evitar reenvío de formulario
+    header("Location: preferencias.php");
+    exit;
+}
 
-        $pdo->beginTransaction();
-        $msg = "";
-
-        if ($action === 'restore') {
-            // RESTAURAR (Mover de item_log a tickets, conceptualmente un ROLLBACK del borrado)
-            $sql_restore = "INSERT INTO tickets (titulo, descripcion, prioridad, estado, usuario_id, created_at) 
-                            VALUES (?, ?, ?, ?, ?, ?)";
-            
-            $stmt_restore = $pdo->prepare($sql_restore);
-            $stmt_restore->execute([
-                $log_item['titulo'], $log_item['descripcion'], $log_item['prioridad'], 
-                $log_item['estado'], $log_item['usuario_id'], $log_item['created_at']
-            ]);
-
-            // Borramos de la LOG
-            $stmt_del = $pdo->prepare("DELETE FROM item_log WHERE id = ?");
-            $stmt_del->execute([$id]);
-            
-            $msg = "Ticket restaurado exitosamente.";
-
-        } elseif ($action === 'kill') {
-            // BORRADO DEFINITIVO (COMMIT del borrado)
-            $stmt_kill = $pdo->prepare("DELETE FROM item_log WHERE id = ?");
-            $stmt_kill->execute([$id]);
-            
-            $msg = "Ticket eliminado permanentemente.";
-        }
-
-        $pdo->commit();
-        redirect_with_message('items_log.php', $msg);
-
-    } catch (PDOException $e) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-        error_log("Error Restaurar/Borrar: " . $e->getMessage());
-        redirect_with_message('items_log.php', 'Ocurrió un error en la base de datos.', true);
-    }
-} 
-
-// ==========================================================
-// 3. VISTA DE LA PAPELERA (Default: action=view)
-// ==========================================================
-elseif ($action === 'view') {
-    
-    // Obtener estilos y tickets borrados
-    $tamaño_actual = $_COOKIE['tamaño_letra'] ?? 'normal';
-    $color_fade_actual = $_COOKIE['color_fade'] ?? '#f5f0ff';
-    $fade_color = $color_fade_actual . 'e0'; 
-    $body_class = "body-$tamaño_actual";
-
-    $stmt = $pdo->prepare("SELECT * FROM item_log WHERE usuario_id = ? ORDER BY deleted_at DESC");
-    $stmt->execute([$user_id]);
-    $deleted_tickets = $stmt->fetchAll();
+// ==================== LEER PREFERENCIAS ACTUALES (DESDE COOKIES) ====================
+$tamaño_actual = $_COOKIE['tamaño_letra'] ?? 'normal';   
+$color_fade_actual = $_COOKIE['color_fade'] ?? '#f5f0ff'; 
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -353,6 +249,3 @@ elseif ($action === 'view') {
     </div>
 </body>
 </html>
-<?php
-} // Fin de la vista 'view'
-?>
