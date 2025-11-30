@@ -22,7 +22,7 @@ if (!$id) {
     exit;
 }
 
-// Obtener ticket
+// Obtener datos del ticket
 $stmt = $pdo->prepare("
     SELECT t.*, u.username 
     FROM tickets t 

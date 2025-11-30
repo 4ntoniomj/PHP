@@ -8,7 +8,7 @@ if (is_logged_in()) {
     header('Location: index.php');
     exit;
 }
-
+// Genera un nuevo token CSRF para el formulario
 $token = generate_csrf_token();
 ?>
 <!DOCTYPE html>
@@ -142,7 +142,8 @@ $token = generate_csrf_token();
             <p class="subtitle">Inicia sesión para acceder a tu cuenta.</p>
         </div>
 
-        <!-- Formulario -->
+        <!-- Formulario - Verifica con authenticate el login -->
+        
         <form method="POST" action="authenticate.php">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($token) ?>">
             

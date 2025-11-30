@@ -5,41 +5,42 @@ require_once '../app/auth.php';
 require_once '../app/csrf.php';
 require_once '../app/utils.php';
 
+// Si ya está logueado, redirige al index
 if (is_logged_in()) {
-    header('Location: dashboard.php');
+    header('Location: index.php');
     exit;
 }
-
+// Procesa el formulario si es POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) die('❌ TOKEN CSRF INVÁLIDO');
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) die('TOKEN CSRF INVÁLIDO');
     
     $pdo = getPDO();
     $username = sanitize_text($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
-    
+    // Validaciones básicas
     if (empty($username) || strlen($username) < 3) {
         $_SESSION['old'] = ['username' => $username];
-        redirect_with_message('register.php', 'Usuario mínimo 3 caracteres', true);
+        redirect_with_message('register.php', 'Usuario mínimo de 3 caracteres', true);
     }
     
     if (strlen($password) < 6) {
         $_SESSION['old'] = ['username' => $username];
-        redirect_with_message('register.php', 'Contraseña mínimo 6 caracteres', true);
+        redirect_with_message('register.php', 'Contraseña mínimo de 6 caracteres', true);
     }
-    
+    // Hashea la contraseña
     $hash = password_hash($password, PASSWORD_DEFAULT);
-    
+    // Inserta el nuevo usuario
     try {
         $pdo->prepare("INSERT INTO usuarios (username, password_hash) VALUES (?, ?)")
              ->execute([$username, $hash]);
-        redirect_with_message('login.php', '✅ Usuario creado correctamente');
+        redirect_with_message('login.php', 'Usuario creado correctamente');
     } catch (PDOException $e) {
         if ($e->getCode() == 23000) {
             $_SESSION['old'] = ['username' => $username];
-            redirect_with_message('register.php', '⚠️ El usuario ya existe', true);
+            redirect_with_message('register.php', 'El usuario ya existe', true);
         }
         error_log("Error registro: " . $e->getMessage());
-        redirect_with_message('register.php', '❌ Error en el registro', true);
+        redirect_with_message('register.php', 'Error en el registro', true);
     }
 }
 
@@ -67,7 +68,7 @@ $token = generate_csrf_token();
         }
 
         .fade-overlay {
-            /* 🔽 FONDO LILA CON OPACIDAD 0.88 */
+            /* FONDO LILA CON OPACIDAD*/
             background-color: rgba(245, 240, 255, 0.88);
             position: fixed;
             top: 0;
@@ -164,7 +165,7 @@ $token = generate_csrf_token();
     </style>
 </head>
 <body>
-    <!-- 🔽 FADE LILA -->
+    <!-- FADE LILA -->
     <div class="fade-overlay"></div>
 
     <div class="register-box">
@@ -178,7 +179,7 @@ $token = generate_csrf_token();
             <p class="subtitle">Regístrate para acceder a la aplicación</p>
         </div>
 
-        <!-- Formulario -->
+        <!-- Formulario --> 
         <form method="POST" action="register.php">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($token) ?>">
             

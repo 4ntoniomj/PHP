@@ -15,7 +15,7 @@ $body_class = "body-$tamaño_actual";
 
 $pdo = getPDO();
 
-// Si viene ID es edición, si no es creación
+// Obtener ID del ticket (si es edición)
 $id = $_GET['id'] ?? null;
 $ticket = null;
 $errors = [];
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: items_list.php");
         exit;
     }
-
+    // verifica y limpia las entradas al formulario
     $titulo = trim($_POST['titulo'] ?? '');
     $descripcion = trim($_POST['descripcion'] ?? '');
     $prioridad = $_POST['prioridad'] ?? 'media';
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // Si hay errores, guardar datos para repintar
+    // Si hay errores, guardar datos viejos y errores en sesión
     if (!empty($errors)) {
         $_SESSION['old'] = [
             'titulo' => $titulo,
