@@ -203,7 +203,7 @@ $color_fade_actual = $_COOKIE['color_fade'] ?? '#f5f0ff';
 
     <div class="main-container">
         <div class="header">
-            <h1>🗑️ Papelera de Reciclaje (item_log)</h1>
+            <h1>📝 Lista de Log</h1>
             <a href="items_list.php" class="btn-back">↶ Volver a la Lista</a>
         </div>
 
@@ -214,7 +214,7 @@ $color_fade_actual = $_COOKIE['color_fade'] ?? '#f5f0ff';
             <div class="trash-grid">
                 <?php if (empty($deleted_tickets)): ?>
                     <div class="empty-state">
-                        <h3>La LOG está vacía</h3>
+                        <h3>La lista de log esta vacía</h3>
                         <p>No hay tickets eliminados recientemente.</p>
                     </div>
                 <?php else: ?>
